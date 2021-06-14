@@ -1,33 +1,36 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_memcpy.c                                        :+:      :+:    :+:   */
+/*   minishell.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: cyuuki <cyuuki@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2020/11/06 17:12:48 by cyuuki            #+#    #+#             */
-/*   Updated: 2021/06/09 20:53:24 by cyuuki           ###   ########.fr       */
+/*   Created: 2021/06/09 17:45:37 by cyuuki            #+#    #+#             */
+/*   Updated: 2021/06/14 19:53:36 by cyuuki           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "libft.h"
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <termios.h>
+#include "libft/libft.h"
+#include <term.h>
+#include <fcntl.h>
+#define BUFFER_SIZE 1024
 
-void	*ft_memcpy(void *dest, const void *src, size_t n)
+typedef struct s_list_two
 {
-	char	*s;
-	char	*d;
-	size_t	i;
+	void				*content;
+	struct s_list_two	*next;
+	struct s_list_two	*prev;
+	
+} t_list_two;
 
-	i = 0;
-	s = (char *)src;
-	d = (char *)dest;
-	if (!dest && !src)
-		return (NULL);
-	while (n)
-	{
-		d[i] = s[i];
-		i++;
-		n--;
-	}
-	return ((char *)dest);
-}
+typedef struct s_str
+{
+	char *buffer_str;
+	int i;
+	int fd;
+} t_str;
+

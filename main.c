@@ -6,18 +6,11 @@
 /*   By: cyuuki <cyuuki@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 14:14:47 by cyuuki            #+#    #+#             */
-/*   Updated: 2021/06/08 19:22:08 by cyuuki           ###   ########.fr       */
+/*   Updated: 2021/06/14 20:13:38 by cyuuki           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <termios.h>
-#include "libft/libft.h"
-#include <term.h>
-
-#define BUFFER_SIZE 1024
+#include "minishell.h"
 
 struct termios saved_attributes;
 
@@ -26,54 +19,116 @@ int	ft_putchar(int c)
 	return (write(STDOUT_FILENO, &c, 1));
 }
 
-char	*copy_sim(char *buffer_str, char *buffer)
+// char *ft_strncpy (char *dest, const char *src, size_t n)
+// {
+// 	static int i;
+	
+// 	while(src[i] && i <= n)
+// 	{
+// 		dest[i] = src[i];
+// 		i++;
+// 	}
+// 	while(i <= n)
+// 	{
+// 		dest[i++] = '\0';
+// 	}
+// 	return (dest);
+// }
+
+// void	*ft_realloc (void *ptr, size_t size)
+// {
+// 	char *str;
+// 	char *ptr_str;
+
+// 	ptr_str =(char *)ptr;
+// 	if( ptr && ft_strlen(ptr_str) <= size)
+// 	{
+// 		str = malloc(size);
+// 	}
+// 	str[size] = '\0';
+// 	//free(ptr);
+// 	return (str);
+// }
+
+void clear_buffer(char *str)
 {
 	int i;
 
 	i = 0;
-	while(i < ft_strlen(buffer))
+	while(str[i])
 	{
-		buffer_str[i] = buffer[i];
+		str[i] = 0;
 		i++;
 	}
-	return (buffer_str);
 }
 
-void	keyhuck(char *buffer)
+int	str_alfa(char *buffer)
 {
-	char *buffer_str;
+	int i;
 
-	if(!ft_strncmp(buffer, "\e[C", 3))
+	i = 0;
+	// if(ft_isalpha(buffer[i]) == 1 || ft_isdigit(buffer[i]) == 1 || buffer[i] == '\n')
+	if(ft_isprint(buffer[i]) == 1 || buffer[i] == '\n')
+		return (0);
+	return (-1);
+}
+
+void my_history(t_str *str)
+{
+	t_list list;
+	int i;
+
+	i = 0;
+	if(str->fd == 0)
+		str->fd = open("temp_history", O_WRONLY | O_CREAT | O_TRUNC);
+	if(str->fd > -1)
 	{
-		if(!ft_strncmp(buffer + 1, "\0", 1))
-			tputs(cursor_right, 1, ft_putchar);
+		write(str->fd, str->buffer_str, ft_strlen(str->buffer_str));
 	}
-	else if(!ft_strncmp(buffer, "\e[D", 3))
+}
+
+void	keyhuck(char *buffer, t_str *str)
+{
+	if(str_alfa(buffer) == 0)
 	{
-		tputs(cursor_left, 1, ft_putchar);
+		str->buffer_str = ft_strjoin(str->buffer_str, buffer);
+		str->i = ft_strlen(str->buffer_str);
+		free(str->buffer_str);
+	}
+	if(!ft_strncmp(buffer, "\e[C", 3) && str->i + 1<= ft_strlen(str->buffer_str))
+	{
+		tputs(cursor_right, 1, ft_putchar);
+		str->i++;
+	}
+	else if(!ft_strncmp(buffer, "\e[D", 3) && str->i >= 0)
+	{
+			tputs(cursor_left, 1, ft_putchar);
+			str->i--;
 	}
 	else if(!ft_strncmp(buffer, "\e[A", 3))
 	{
-		tputs(clr_bol, 1, ft_putchar);
-		tputs(clr_eol, 1, ft_putchar);
 		tputs(restore_cursor, 1, ft_putchar);
-		write(1, "minishell->", 11);
+		tputs(clr_eol, 1, ft_putchar);
 		tputs(tgetstr("co", &buffer), 1, ft_putchar);
-		write(1, "up", 2);
+		write(1, "up", 4);
 	}
 	else if(!ft_strncmp(buffer, "\e[B", 3))
 	{
-		tputs(clr_bol, 1, ft_putchar);
-		tputs(clr_eol, 1, ft_putchar);
 		tputs(restore_cursor, 1, ft_putchar);
-		write(1, "minishell->", 11);
+		tputs(clr_eol, 1, ft_putchar);
 		tputs(tgetstr("co", &buffer), 1, ft_putchar);
 		write(1, "down", 4);
+		
 	}
 	else if(!ft_strncmp(buffer, "\x7f", 1))
 	{
 		tputs(cursor_left, 1, ft_putchar);
 		tputs(delete_character, 1, ft_putchar);
+	}
+	if(ft_strchr(str->buffer_str, '\n') != NULL)
+	{
+		my_history(str);
+		str->buffer_str = "";
 	}
 }
 
@@ -81,8 +136,10 @@ int	read_line(int gc, char *gv, char *nv)
 {
 	char *buffer;
 	int count;
-	char *buffer_key;
+	t_str str;
 
+	str.i = 0;
+	str.fd = 0;
 	buffer = (char *) malloc(sizeof(char) * BUFFER_SIZE);
 	if (!BUFFER_SIZE)
 		return (-1);
@@ -93,22 +150,20 @@ int	read_line(int gc, char *gv, char *nv)
 	count = tgetent(0, "xterm-256color");
 	if(count < 0)
 		return (-1);
-	buffer_key = buffer;
-	tputs(tgetstr("sc", &buffer_key), 1, ft_putchar);
 	write(1, "minishell->", 11);
+	tputs(save_cursor, 1, ft_putchar);
+	str.buffer_str = "";
 	while(ft_strncmp(buffer, "\4", 1))
 	{	
+		clear_buffer(buffer);
 		count = read(0, buffer, BUFFER_SIZE);
-		if (count < 0)
-			return (-1);
 		write(1, buffer, 1);
 		if(ft_strncmp(buffer, "\n", 1) == 0)
 		{
-			buffer_key = buffer;
-			tputs(tgetstr("sc", &buffer_key), 1, ft_putchar);
 			write(1, "minishell->", 11);
+			tputs(save_cursor, 1, ft_putchar);
 		}
-		keyhuck(buffer);
+		keyhuck(buffer, &str);
 	}
 	return (0);
 }
