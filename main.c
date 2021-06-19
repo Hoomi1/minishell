@@ -50,6 +50,26 @@ int	ft_putchar(int c)
 // 	return (str);
 // }
 
+t_listtwo *list_next(char *strh)
+{
+	t_listtwo *newlist;
+
+	newlist = (t_listtwo *)malloc(sizeof(t_listtwo));
+	newlist->next = NULL;
+	newlist->prev = NULL;
+	newlist->str = strh;
+	if (head == NULL)
+		head = tail = newlist;
+	else
+	{
+		tail->next = newlist;
+		newlist->prev = tail;
+		tail = newlist;
+	}
+
+	return(head);
+}
+
 void clear_buffer(char *str)
 {
 	int i;
@@ -75,7 +95,6 @@ int	str_alfa(char *buffer)
 
 void my_history(t_str *str)
 {
-	t_list list;
 	int i;
 
 	i = 0;
@@ -84,6 +103,12 @@ void my_history(t_str *str)
 	if(str->fd > -1)
 	{
 		write(str->fd, str->buffer_str, ft_strlen(str->buffer_str));
+	}
+	list_next(str->buffer_str);
+	while (head != NULL)
+	{
+		printf("%s\n", head->str);
+		head = head->next;
 	}
 }
 

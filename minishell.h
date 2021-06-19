@@ -27,6 +27,16 @@ typedef struct s_list_two
 	
 } t_list_two;
 
+typedef struct s_listtwo
+{
+	void *str;
+	s_listtwo *next;
+	s_listtwo *prev;
+
+}	t_listtwo;
+
+t_listtwo *head, *tail;
+
 typedef struct s_str
 {
 	char *buffer_str;
