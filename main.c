@@ -6,7 +6,7 @@
 /*   By: cyuuki <cyuuki@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 14:14:47 by cyuuki            #+#    #+#             */
-/*   Updated: 2021/06/14 20:13:38 by cyuuki           ###   ########.fr       */
+/*   Updated: 2021/06/21 19:20:21 by cyuuki           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,6 +50,30 @@ int	ft_putchar(int c)
 // 	return (str);
 // }
 
+t_listtwo *list_next(char *strh)
+{
+	t_listtwo *newlist;
+	char *str;
+
+	str = strh;
+	newlist = (t_listtwo *)malloc(sizeof(t_listtwo));
+	newlist->next = NULL;
+	newlist->prev = NULL;
+	newlist->str = str;
+	if (head == NULL)
+	{
+		head = newlist;
+		tail = newlist;
+	}
+	else
+	{
+		tail->next = newlist;
+		newlist->prev = tail;
+		tail = newlist;
+	}
+	return(head);
+}
+
 void clear_buffer(char *str)
 {
 	int i;
@@ -67,79 +91,98 @@ int	str_alfa(char *buffer)
 	int i;
 
 	i = 0;
-	// if(ft_isalpha(buffer[i]) == 1 || ft_isdigit(buffer[i]) == 1 || buffer[i] == '\n')
 	if(ft_isprint(buffer[i]) == 1 || buffer[i] == '\n')
 		return (0);
 	return (-1);
 }
 
-void my_history(t_str *str)
+void	my_history(t_str *str)
 {
-	t_list list;
-	int i;
-
-	i = 0;
-	if(str->fd == 0)
+	if (str->fd == 0)
 		str->fd = open("temp_history", O_WRONLY | O_CREAT | O_TRUNC);
-	if(str->fd > -1)
+	if (str->fd > -1 && *str->buffer_str != '\n')
 	{
 		write(str->fd, str->buffer_str, ft_strlen(str->buffer_str));
 	}
+	list_next(str->buffer_str);
 }
 
-void	keyhuck(char *buffer, t_str *str)
-{
+void	keyhuck(char *buffer, t_str *str, int count)
+{	t_listtwo *t;
+
 	if(str_alfa(buffer) == 0)
 	{
 		str->buffer_str = ft_strjoin(str->buffer_str, buffer);
 		str->i = ft_strlen(str->buffer_str);
 		free(str->buffer_str);
-	}
-	if(!ft_strncmp(buffer, "\e[C", 3) && str->i + 1<= ft_strlen(str->buffer_str))
-	{
-		tputs(cursor_right, 1, ft_putchar);
-		str->i++;
-	}
-	else if(!ft_strncmp(buffer, "\e[D", 3) && str->i >= 0)
-	{
-			tputs(cursor_left, 1, ft_putchar);
-			str->i--;
-	}
-	else if(!ft_strncmp(buffer, "\e[A", 3))
-	{
-		tputs(restore_cursor, 1, ft_putchar);
-		tputs(clr_eol, 1, ft_putchar);
-		tputs(tgetstr("co", &buffer), 1, ft_putchar);
-		write(1, "up", 4);
-	}
-	else if(!ft_strncmp(buffer, "\e[B", 3))
-	{
-		tputs(restore_cursor, 1, ft_putchar);
-		tputs(clr_eol, 1, ft_putchar);
-		tputs(tgetstr("co", &buffer), 1, ft_putchar);
-		write(1, "down", 4);
-		
-	}
-	else if(!ft_strncmp(buffer, "\x7f", 1))
-	{
-		tputs(cursor_left, 1, ft_putchar);
-		tputs(delete_character, 1, ft_putchar);
+		str->lef_rig = str->lef_rig + 1;
+		if(str->lef_rig != str->i)
+			str->i = str->lef_rig;
 	}
 	if(ft_strchr(str->buffer_str, '\n') != NULL)
 	{
 		my_history(str);
 		str->buffer_str = "";
+		str->i = 0;
+		str->lef_rig = 0;
+	}
+	if(!ft_strncmp(buffer, "\e[C", 3) && str->lef_rig < str->i)
+	{
+		tputs(cursor_right, 1, ft_putchar); // right
+		str->lef_rig++;
+	}
+	else if(!ft_strncmp(buffer, "\e[D", 3) && str->lef_rig != 0)
+	{
+		tputs(cursor_left, 1, ft_putchar); // left
+		str->lef_rig--;
+	}
+	else if(!ft_strncmp(buffer, "\e[A", 3) && head != NULL)
+	{
+		tputs(restore_cursor, 1, ft_putchar);
+		tputs(clr_eol, 1, ft_putchar);
+		tputs(tgetstr("co", &buffer), 1, ft_putchar);
+		write(1, head->str , ft_strlen(head->str));
+		if(head->next != NULL)
+			head = head->next;
+	}
+	else if(!ft_strncmp(buffer, "\e[B", 3) && head != NULL)
+	{
+		tputs(restore_cursor, 1, ft_putchar);
+		tputs(clr_eol, 1, ft_putchar);
+		tputs(tgetstr("co", &buffer), 1, ft_putchar);
+		write(1, head->str, ft_strlen(head->str));
+		if(head->prev != NULL)
+			head = head->prev;
+	}
+	else if(!ft_strncmp(buffer, "\x7f", 1) && str->lef_rig != 0)
+	{
+		tputs(cursor_left, 1, ft_putchar);
+		tputs(delete_character, 1, ft_putchar);
+		str->lef_rig--;
 	}
 }
+
+// t_Linked *createLinked()
+// {
+// 	t_Linked *tmp;
+
+// 	tmp = (t_Linked *)malloc(sizeof(t_Linked));
+// 	tmp->i = 0;
+// 	tmp->head = NULL;
+// 	tmp->tail = NULL;
+// 	return (tmp);
+// }
 
 int	read_line(int gc, char *gv, char *nv)
 {
 	char *buffer;
 	int count;
 	t_str str;
-
+	t_listtwo *t;
+	
 	str.i = 0;
 	str.fd = 0;
+	str.lef_rig = 0;
 	buffer = (char *) malloc(sizeof(char) * BUFFER_SIZE);
 	if (!BUFFER_SIZE)
 		return (-1);
@@ -157,14 +200,20 @@ int	read_line(int gc, char *gv, char *nv)
 	{	
 		clear_buffer(buffer);
 		count = read(0, buffer, BUFFER_SIZE);
-		write(1, buffer, 1);
+		if(count == 1)
+			write(1, buffer, 1);
 		if(ft_strncmp(buffer, "\n", 1) == 0)
 		{
 			write(1, "minishell->", 11);
 			tputs(save_cursor, 1, ft_putchar);
 		}
-		keyhuck(buffer, &str);
+		keyhuck(buffer, &str, count);
 	}
+	// while(head != NULL)
+	// {
+	// 	printf("%s\n", head->str);
+	// 	head = head->next;
+	// }
 	return (0);
 }
 

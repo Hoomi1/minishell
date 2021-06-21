@@ -6,7 +6,7 @@
 /*   By: cyuuki <cyuuki@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/09 17:45:37 by cyuuki            #+#    #+#             */
-/*   Updated: 2021/06/14 19:53:36 by cyuuki           ###   ########.fr       */
+/*   Updated: 2021/06/21 19:19:19 by cyuuki           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,18 +19,21 @@
 #include <fcntl.h>
 #define BUFFER_SIZE 1024
 
-typedef struct s_list_two
+typedef struct s_listtwo
 {
-	void				*content;
-	struct s_list_two	*next;
-	struct s_list_two	*prev;
-	
-} t_list_two;
+	void *str;
+	struct s_listtwo *next;
+	struct s_listtwo *prev;
+
+}	t_listtwo;
+
+t_listtwo *head, *tail;
 
 typedef struct s_str
 {
 	char *buffer_str;
 	int i;
 	int fd;
+	int lef_rig;
 } t_str;
 
