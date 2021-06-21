@@ -6,7 +6,7 @@
 /*   By: cyuuki <cyuuki@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 14:14:47 by cyuuki            #+#    #+#             */
-/*   Updated: 2021/06/21 19:20:21 by cyuuki           ###   ########.fr       */
+/*   Updated: 2021/06/21 19:59:45 by cyuuki           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -107,24 +107,65 @@ void	my_history(t_str *str)
 	list_next(str->buffer_str);
 }
 
-void	keyhuck(char *buffer, t_str *str, int count)
-{	t_listtwo *t;
-
-	if(str_alfa(buffer) == 0)
-	{
+void keyhuck_str(char *buffer, t_str *str)
+{
 		str->buffer_str = ft_strjoin(str->buffer_str, buffer);
 		str->i = ft_strlen(str->buffer_str);
 		free(str->buffer_str);
 		str->lef_rig = str->lef_rig + 1;
 		if(str->lef_rig != str->i)
 			str->i = str->lef_rig;
+}
+
+void key_history(t_str *str)
+{
+	my_history(str);
+	str->buffer_str = "";
+	str->i = 0;
+	str->lef_rig = 0;
+	str->del = 0;
+}
+
+void keyhuck_down(char *buffer)
+{
+	tputs(restore_cursor, 1, ft_putchar);
+	tputs(clr_eol, 1, ft_putchar);
+	tputs(tgetstr("co", &buffer), 1, ft_putchar);
+	write(1, head->str, ft_strlen(head->str));
+	if(head->prev != NULL)
+		head = head->prev;
+}
+
+void keyhuck_up(char *buffer)
+{
+	tputs(restore_cursor, 1, ft_putchar);
+	tputs(clr_eol, 1, ft_putchar);
+	tputs(tgetstr("co", &buffer), 1, ft_putchar);
+	write(1, head->str , ft_strlen(head->str));
+	if (head->next != NULL)
+		head = head->next;
+}
+
+void keyhuck_del(t_str *str)
+{
+	tputs(cursor_left, 1, ft_putchar);
+	tputs(delete_character, 1, ft_putchar);
+	str->lef_rig--;
+	str->del = str->del + 1;
+	str->buffer_str[str->i - str->del] = '\0';
+}
+
+void	keyhuck(char *buffer, t_str *str, int count)
+{	
+	t_listtwo *t;
+
+	if(str_alfa(buffer) == 0)
+	{
+		keyhuck_str(buffer, str);
 	}
 	if(ft_strchr(str->buffer_str, '\n') != NULL)
 	{
-		my_history(str);
-		str->buffer_str = "";
-		str->i = 0;
-		str->lef_rig = 0;
+		key_history(str);
 	}
 	if(!ft_strncmp(buffer, "\e[C", 3) && str->lef_rig < str->i)
 	{
@@ -138,27 +179,15 @@ void	keyhuck(char *buffer, t_str *str, int count)
 	}
 	else if(!ft_strncmp(buffer, "\e[A", 3) && head != NULL)
 	{
-		tputs(restore_cursor, 1, ft_putchar);
-		tputs(clr_eol, 1, ft_putchar);
-		tputs(tgetstr("co", &buffer), 1, ft_putchar);
-		write(1, head->str , ft_strlen(head->str));
-		if(head->next != NULL)
-			head = head->next;
+		keyhuck_up(buffer);
 	}
 	else if(!ft_strncmp(buffer, "\e[B", 3) && head != NULL)
 	{
-		tputs(restore_cursor, 1, ft_putchar);
-		tputs(clr_eol, 1, ft_putchar);
-		tputs(tgetstr("co", &buffer), 1, ft_putchar);
-		write(1, head->str, ft_strlen(head->str));
-		if(head->prev != NULL)
-			head = head->prev;
+		keyhuck_down(buffer);
 	}
 	else if(!ft_strncmp(buffer, "\x7f", 1) && str->lef_rig != 0)
 	{
-		tputs(cursor_left, 1, ft_putchar);
-		tputs(delete_character, 1, ft_putchar);
-		str->lef_rig--;
+		keyhuck_del(str);
 	}
 }
 
@@ -183,6 +212,7 @@ int	read_line(int gc, char *gv, char *nv)
 	str.i = 0;
 	str.fd = 0;
 	str.lef_rig = 0;
+	str.del = 0;
 	buffer = (char *) malloc(sizeof(char) * BUFFER_SIZE);
 	if (!BUFFER_SIZE)
 		return (-1);

@@ -6,7 +6,7 @@
 /*   By: cyuuki <cyuuki@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/09 17:45:37 by cyuuki            #+#    #+#             */
-/*   Updated: 2021/06/21 19:19:19 by cyuuki           ###   ########.fr       */
+/*   Updated: 2021/06/21 19:44:20 by cyuuki           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,5 +35,6 @@ typedef struct s_str
 	int i;
 	int fd;
 	int lef_rig;
+	int del;
 } t_str;
 
