@@ -6,7 +6,7 @@
 /*   By: cyuuki <cyuuki@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 14:14:47 by cyuuki            #+#    #+#             */
-/*   Updated: 2021/06/21 19:59:45 by cyuuki           ###   ########.fr       */
+/*   Updated: 2021/06/21 20:39:35 by cyuuki           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -115,6 +115,8 @@ void keyhuck_str(char *buffer, t_str *str)
 		str->lef_rig = str->lef_rig + 1;
 		if(str->lef_rig != str->i)
 			str->i = str->lef_rig;
+		if (str->del > 0)
+			str->del = str->del - 1;
 }
 
 void key_history(t_str *str)
@@ -152,7 +154,10 @@ void keyhuck_del(t_str *str)
 	tputs(delete_character, 1, ft_putchar);
 	str->lef_rig--;
 	str->del = str->del + 1;
-	str->buffer_str[str->i - str->del] = '\0';
+	// if (str->lef_rig != str->i)
+	// 	str->buffer_str[str->lef_rig + str->del] = '\0';
+	// else
+		str->buffer_str[str->i - str->del] = '\0';
 }
 
 void	keyhuck(char *buffer, t_str *str, int count)
