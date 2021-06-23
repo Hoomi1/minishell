@@ -6,13 +6,15 @@
 /*   By: cyuuki <cyuuki@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 14:14:47 by cyuuki            #+#    #+#             */
-/*   Updated: 2021/06/21 20:39:35 by cyuuki           ###   ########.fr       */
+/*   Updated: 2021/06/23 20:49:42 by cyuuki           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-struct termios saved_attributes;
+//struct termios saved_attributes;
+
+
 
 int	ft_putchar(int c)
 {
@@ -100,7 +102,9 @@ void	my_history(t_str *str)
 {
 	if (str->fd == 0)
 		str->fd = open("temp_history", O_WRONLY | O_CREAT | O_TRUNC);
-	if (str->fd > -1 && *str->buffer_str != '\n')
+	if(gl.signal == 1)
+		str->buffer_str = "\n";
+	if ((str->fd > -1 && *str->buffer_str != '\n') )
 	{
 		write(str->fd, str->buffer_str, ft_strlen(str->buffer_str));
 	}
@@ -126,6 +130,7 @@ void key_history(t_str *str)
 	str->i = 0;
 	str->lef_rig = 0;
 	str->del = 0;
+	gl.signal = 0;
 }
 
 void keyhuck_down(char *buffer)
@@ -157,18 +162,47 @@ void keyhuck_del(t_str *str)
 	// if (str->lef_rig != str->i)
 	// 	str->buffer_str[str->lef_rig + str->del] = '\0';
 	// else
-		str->buffer_str[str->i - str->del] = '\0';
+	str->buffer_str[str->i - str->del] = '\0';
+}
+
+void my_init()
+{
+	printf("\n");
+	write(1, "minishell->", 11);
+	tputs(save_cursor, 1, ft_putchar);
+	gl.signal = 1;
+}
+
+void my_quit()
+{
+	
+}
+
+void signal_my(char *buffer)
+{
+	void (*funcptr)(int);
+	signal(SIGINT, my_init);
+	signal(SIGQUIT,my_quit);
 }
 
 void	keyhuck(char *buffer, t_str *str, int count)
 {	
 	t_listtwo *t;
 
+
+//	ioctl(1, TIOCGWINSZ, &win);
 	if(str_alfa(buffer) == 0)
 	{
 		keyhuck_str(buffer, str);
 	}
-	if(ft_strchr(str->buffer_str, '\n') != NULL)
+	// if (str->lef_rig >= win.ws_col - ft_strlen("minishell->") || str->i >= win.ws_col - ft_strlen("minishell->"))
+	// {
+	// 	printf("hello\n");
+	// 	str->lef_rig = 0;
+	// 	str->i = 0;
+	// }
+	signal_my(buffer);
+	if(ft_strchr(str->buffer_str, '\n') != NULL || gl.signal == 1)
 	{
 		key_history(str);
 	}
@@ -196,45 +230,46 @@ void	keyhuck(char *buffer, t_str *str, int count)
 	}
 }
 
-// t_Linked *createLinked()
-// {
-// 	t_Linked *tmp;
+void settin_par(t_str *str)
+{
+	str->i = 0;
+	str->fd = 0;
+	str->lef_rig = 0;
+	str->del = 0;
+	str->buffer_str = "";
+}
 
-// 	tmp = (t_Linked *)malloc(sizeof(t_Linked));
-// 	tmp->i = 0;
-// 	tmp->head = NULL;
-// 	tmp->tail = NULL;
-// 	return (tmp);
-// }
+int settin_term()
+{
+	int count;
+	
+	tcgetattr(0, &gl.saved_attributes);
+	gl.saved_attributes.c_lflag &= ~(ECHO);
+	gl.saved_attributes.c_lflag &= ~(ICANON);
+	tcsetattr(0, TCSANOW, &gl.saved_attributes);
+	count = tgetent(0, "xterm-256color");
+	if(count < 0)
+		return (-1);
+	return (count);
+}
 
 int	read_line(int gc, char *gv, char *nv)
 {
 	char *buffer;
 	int count;
 	t_str str;
-	t_listtwo *t;
-	
-	str.i = 0;
-	str.fd = 0;
-	str.lef_rig = 0;
-	str.del = 0;
+	settin_par(&str);
 	buffer = (char *) malloc(sizeof(char) * BUFFER_SIZE);
 	if (!BUFFER_SIZE)
 		return (-1);
-	tcgetattr(0, &saved_attributes);
-	saved_attributes.c_lflag &= ~(ECHO);
-	saved_attributes.c_lflag &= ~(ICANON);
-	tcsetattr(0, TCSANOW, &saved_attributes);
-	count = tgetent(0, "xterm-256color");
-	if(count < 0)
-		return (-1);
+	count = settin_term();
 	write(1, "minishell->", 11);
 	tputs(save_cursor, 1, ft_putchar);
-	str.buffer_str = "";
-	while(ft_strncmp(buffer, "\4", 1))
+	while(1)
 	{	
 		clear_buffer(buffer);
 		count = read(0, buffer, BUFFER_SIZE);
+		//printf("%d\n", count);
 		if(count == 1)
 			write(1, buffer, 1);
 		if(ft_strncmp(buffer, "\n", 1) == 0)
@@ -243,6 +278,11 @@ int	read_line(int gc, char *gv, char *nv)
 			tputs(save_cursor, 1, ft_putchar);
 		}
 		keyhuck(buffer, &str, count);
+		if (!ft_strncmp(buffer, "\4", 1) && !ft_strncmp(str.buffer_str, "", 1))
+		{	
+			write(1, "exit", 4);
+			break ;
+		}
 	}
 	// while(head != NULL)
 	// {
@@ -255,9 +295,9 @@ int	read_line(int gc, char *gv, char *nv)
 int	main(int gc, char **gv, char **nv)
 {
 	read_line(gc, *gv, *nv);
-	tcgetattr(0, &saved_attributes);
-	saved_attributes.c_lflag |= ECHO;
-	saved_attributes.c_lflag |= ICANON;
-	tcsetattr(0, TCSANOW, &saved_attributes);
+	tcgetattr(0, &gl.saved_attributes);
+	gl.saved_attributes.c_lflag |= ECHO;
+	gl.saved_attributes.c_lflag |= ICANON;
+	tcsetattr(0, TCSANOW, &gl.saved_attributes);
 	return (0);
 }

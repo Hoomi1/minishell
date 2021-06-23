@@ -6,7 +6,7 @@
 /*   By: cyuuki <cyuuki@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/09 17:45:37 by cyuuki            #+#    #+#             */
-/*   Updated: 2021/06/21 20:12:59 by cyuuki           ###   ########.fr       */
+/*   Updated: 2021/06/23 19:59:18 by cyuuki           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,8 @@
 #include "libft/libft.h"
 #include <term.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
+//#include <signal.h>
 #define BUFFER_SIZE 1024
 
 typedef struct s_listtwo
@@ -28,6 +30,17 @@ typedef struct s_listtwo
 }	t_listtwo;
 
 t_listtwo *head, *tail;
+struct s_global gl;
+typedef struct s_global
+{
+	struct termios saved_attributes;
+	struct winsize win;
+	int signal;
+	//t_str str;
+} t_global;
+
+
+
 
 typedef struct s_str
 {
