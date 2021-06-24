@@ -6,7 +6,7 @@
 /*   By: cyuuki <cyuuki@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/09 17:45:37 by cyuuki            #+#    #+#             */
-/*   Updated: 2021/06/23 19:59:18 by cyuuki           ###   ########.fr       */
+/*   Updated: 2021/06/24 17:25:00 by cyuuki           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 #include <term.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <errno.h>
 //#include <signal.h>
 #define BUFFER_SIZE 1024
 
@@ -36,6 +37,8 @@ typedef struct s_global
 	struct termios saved_attributes;
 	struct winsize win;
 	int signal;
+	char *nv;
+	char *gv;
 	//t_str str;
 } t_global;
 

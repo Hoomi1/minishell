@@ -6,7 +6,7 @@
 /*   By: cyuuki <cyuuki@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 14:14:47 by cyuuki            #+#    #+#             */
-/*   Updated: 2021/06/23 20:49:42 by cyuuki           ###   ########.fr       */
+/*   Updated: 2021/06/24 18:51:45 by cyuuki           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -111,7 +111,7 @@ void	my_history(t_str *str)
 	list_next(str->buffer_str);
 }
 
-void keyhuck_str(char *buffer, t_str *str)
+void	keyhuck_str(char *buffer, t_str *str)
 {
 		str->buffer_str = ft_strjoin(str->buffer_str, buffer);
 		str->i = ft_strlen(str->buffer_str);
@@ -123,9 +123,57 @@ void keyhuck_str(char *buffer, t_str *str)
 			str->del = str->del - 1;
 }
 
+void my_pwd(char *str)
+{
+	char dir[1024];
+	char *pwd = "pwd\n";
+	
+	if (ft_strncmp(pwd, str, ft_strlen(str)) == 0 && ft_strlen(str) != 0)
+	{
+		if (getcwd(dir, 1024) != NULL)
+			printf("%s\n", dir);
+		str = "\0";
+	}
+}
+
+void my_cd(t_str *str)
+{
+	char *str_cd;
+
+	if(str->buffer_str[0] == 'c' && str->buffer_str[1] == 'd')
+	{
+		str_cd = ft_strrchr(str->buffer_str, ' ');
+		str_cd++;
+		if (*str_cd == '.' && *(str_cd + 1) == '.')
+		{
+			printf("Hello");
+		}
+		if (chdir(str_cd) == 0)
+		{
+			
+		}
+		else
+		{
+			printf("bash: cd: %s: No such file or directory\n", str_cd);
+		}
+	}
+}
+
+void	my_builtins(t_str *str)
+{
+	char *str_built;
+	
+	str_built = ft_strchr(str->buffer_str, ' ');
+	str_built++;
+	//printf("%s\n", str_built);
+	my_pwd(str->buffer_str);
+	my_cd(str);
+}
+
 void key_history(t_str *str)
 {
 	my_history(str);
+	//my_builtins(str);
 	str->buffer_str = "";
 	str->i = 0;
 	str->lef_rig = 0;
@@ -158,11 +206,12 @@ void keyhuck_del(t_str *str)
 	tputs(cursor_left, 1, ft_putchar);
 	tputs(delete_character, 1, ft_putchar);
 	str->lef_rig--;
-	str->del = str->del + 1;
+	str->del = 1;
 	// if (str->lef_rig != str->i)
 	// 	str->buffer_str[str->lef_rig + str->del] = '\0';
 	// else
 	str->buffer_str[str->i - str->del] = '\0';
+	str->i--;
 }
 
 void my_init()
@@ -187,20 +236,10 @@ void signal_my(char *buffer)
 
 void	keyhuck(char *buffer, t_str *str, int count)
 {	
-	t_listtwo *t;
-
-
-//	ioctl(1, TIOCGWINSZ, &win);
 	if(str_alfa(buffer) == 0)
 	{
 		keyhuck_str(buffer, str);
 	}
-	// if (str->lef_rig >= win.ws_col - ft_strlen("minishell->") || str->i >= win.ws_col - ft_strlen("minishell->"))
-	// {
-	// 	printf("hello\n");
-	// 	str->lef_rig = 0;
-	// 	str->i = 0;
-	// }
 	signal_my(buffer);
 	if(ft_strchr(str->buffer_str, '\n') != NULL || gl.signal == 1)
 	{
@@ -253,11 +292,35 @@ int settin_term()
 	return (count);
 }
 
+void infin_while(char *buffer, t_str *str, int count)
+{
+	while(1)
+	{	
+		clear_buffer(buffer);
+		count = read(0, buffer, BUFFER_SIZE);
+		if(count == 1)
+			write(1, buffer, 1);
+		if(ft_strncmp(buffer, "\n", 1) == 0)
+		{
+			my_builtins(str);
+			write(1, "minishell->", 11);
+			tputs(save_cursor, 1, ft_putchar);
+		}
+		keyhuck(buffer, str, count);
+		if (!ft_strncmp(buffer, "\4", 1) && !ft_strncmp(str->buffer_str, "", 1))
+		{	
+			write(1, "exit", 4);
+			break ;
+		}
+	}
+}
+
 int	read_line(int gc, char *gv, char *nv)
 {
 	char *buffer;
 	int count;
 	t_str str;
+	
 	settin_par(&str);
 	buffer = (char *) malloc(sizeof(char) * BUFFER_SIZE);
 	if (!BUFFER_SIZE)
@@ -265,25 +328,7 @@ int	read_line(int gc, char *gv, char *nv)
 	count = settin_term();
 	write(1, "minishell->", 11);
 	tputs(save_cursor, 1, ft_putchar);
-	while(1)
-	{	
-		clear_buffer(buffer);
-		count = read(0, buffer, BUFFER_SIZE);
-		//printf("%d\n", count);
-		if(count == 1)
-			write(1, buffer, 1);
-		if(ft_strncmp(buffer, "\n", 1) == 0)
-		{
-			write(1, "minishell->", 11);
-			tputs(save_cursor, 1, ft_putchar);
-		}
-		keyhuck(buffer, &str, count);
-		if (!ft_strncmp(buffer, "\4", 1) && !ft_strncmp(str.buffer_str, "", 1))
-		{	
-			write(1, "exit", 4);
-			break ;
-		}
-	}
+	infin_while(buffer, &str, count);
 	// while(head != NULL)
 	// {
 	// 	printf("%s\n", head->str);
@@ -294,6 +339,8 @@ int	read_line(int gc, char *gv, char *nv)
 
 int	main(int gc, char **gv, char **nv)
 {
+	gl.nv = *nv;
+	gl.gv = *gv;
 	read_line(gc, *gv, *nv);
 	tcgetattr(0, &gl.saved_attributes);
 	gl.saved_attributes.c_lflag |= ECHO;
