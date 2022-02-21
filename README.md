@@ -1,4 +1,4 @@
-#Minishell - command shell bash
+# Minishell - command shell bash
 
 ## Table of contents
 __1. Objective__ 💡
