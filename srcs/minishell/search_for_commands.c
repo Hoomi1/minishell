@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   search_for_commands.c                              :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: scanary <scanary@student.42.fr>            +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2021/06/30 21:05:02 by scanary           #+#    #+#             */
-/*   Updated: 2021/07/21 05:59:11 by scanary          ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "minishell.h"
 
 static void	is_full_path(t_commands *commands, t_data *data, char **split_path)
